@@ -181,12 +181,41 @@ def train(
                 logging.info(
                     f"Epoch {epoch}: loss={valid_loss:.4f}, RMSE_E_per_atom={error_e:.1f} meV, RMSE_F={error_f:.1f} meV / A, RMSE_Mu_per_atom={error_mu:.2f} mDebye"
                 )
+            ########################    
+            # CUSTOM METHOD
+            elif (
+                log_errors == "ALL_METRICS"
+                and eval_metrics["rmse_stress_per_atom"] is not None
+            ):
+                error_mae_e = eval_metrics["mae_e"] * 1e3
+                error_mae_f = eval_metrics["mae_f"] * 1e3
+                error_mae_s = eval_metrics["mae_stress"] *1e3
+                error_e = eval_metrics["rmse_e_per_atom"] * 1e3
+                error_f = eval_metrics["rmse_f"] * 1e3
+                error_stress = eval_metrics["rmse_stress_per_atom"] * 1e3
+                logging.info(
+                    f"Epoch {epoch}: loss={valid_loss:.4f}, MAE_E={error_mae_e:.1f} meV, MAE_F={error_mae_f:.1f} meV / A, RMSE_E_per_atom={error_e:.1f} meV, RMSE_F={error_f:.1f} meV / A, RMSE_stress_per_atom={error_stress:.1f} meV / A^3"
+                )
+            #####################
             if log_wandb:
                 wandb_log_dict = {
                     "epoch": epoch,
                     "valid_loss": valid_loss,
                     "valid_rmse_e_per_atom": eval_metrics["rmse_e_per_atom"],
                     "valid_rmse_f": eval_metrics["rmse_f"],
+                }
+                ##### ADD STRESS wandb metric logging
+                if eval_metrics["rmse_stress_per_atom"] is not None:
+                    print("Eval with stress")
+                    wandb_log_dict = {
+                    "epoch": epoch,
+                    "valid_loss": valid_loss,
+                    "valid_mae_e": eval_metrics["mae_e"],
+                    "valid_mae_f": eval_metrics["mae_f"],
+                    "valid_mae_s": eval_metrics["mae_stress"],
+                    "valid_rmse_e_per_atom": eval_metrics["rmse_e_per_atom"],
+                    "valid_rmse_f": eval_metrics["rmse_f"],
+                    "valid_rmse_stress_per_atom": eval_metrics["rmse_stress_per_atom"],
                 }
                 wandb.log(wandb_log_dict)
             if valid_loss >= lowest_loss:
@@ -301,7 +330,19 @@ def evaluate(
         )
         batch = batch.cpu()
         output = tensor_dict_to_device(output, device=torch.device("cpu"))
-
+        
+        # Custom IMplementation for 2d structures
+        if output.get("stress") is not None and batch.stress is not None:
+            print("Batch stress: {}".format(batch.stress))
+            batch.stress[:,2,:] = 0
+            batch.stress[:,:,2] = 0
+            print("Batch stress new: {}".format(batch.stress))
+            print("Output stress: {}".format(output['stress']))
+            output['stress'][:,2,:] = 0
+            output['stress'][:,:,2] = 0
+            #output['stress'][2,:] = 0
+            print("Output stress new: {}".format(output['stress']))
+            
         loss = loss_fn(pred=output, ref=batch)
         total_loss += to_numpy(loss).item()
 
@@ -317,11 +358,20 @@ def evaluate(
             fs_list.append(batch.forces)
         if output.get("stress") is not None and batch.stress is not None:
             stress_computed = True
+            #print("Batch stress: {}".format(batch.stress))
+            batch.stress[:,2,:] = 0
+            batch.stress[:,:,2] = 0
+            print("Batch stress new: {}".format(batch.stress))
+            #print("Output stress: {}".format(output['stress']))
+            output['stress'][:,2,:] = 0
+            output['stress'][:,:,2] = 0
+            #output['stress'][2,:] = 0
+            print("Output stress new: {}".format(output['stress']))
             delta_stress_list.append(batch.stress - output["stress"])
             delta_stress_per_atom_list.append(
                 (batch.stress - output["stress"])
                 / (batch.ptr[1:] - batch.ptr[:-1]).view(-1, 1, 1)
-            )
+            )        
         if output.get("virials") is not None and batch.virials is not None:
             virials_computed = True
             delta_virials_list.append(batch.virials - output["virials"])
@@ -362,7 +412,10 @@ def evaluate(
         aux["q95_f"] = compute_q95(delta_fs)
     if stress_computed:
         delta_stress = to_numpy(torch.cat(delta_stress_list, dim=0))
+        #### MAYBE MODIFY HERE
+        #print("Delta stress: {}".format(delta_stress))
         delta_stress_per_atom = to_numpy(torch.cat(delta_stress_per_atom_list, dim=0))
+        #print("Delta stress per atom: {}".format(delta_stress_per_atom))
         aux["mae_stress"] = compute_mae(delta_stress)
         aux["rmse_stress"] = compute_rmse(delta_stress)
         aux["rmse_stress_per_atom"] = compute_rmse(delta_stress_per_atom)

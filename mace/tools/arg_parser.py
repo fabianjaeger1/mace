@@ -1,4 +1,4 @@
-###########################################################################################
+##########################################################################################r
 # Parsing functionalities
 # Authors: Ilyes Batatia, Gregor Simm, David Kovacs
 # This program is distributed under the MIT License (see MIT.md)
@@ -65,6 +65,7 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
             "DipoleRMSE",
             "DipoleMAE",
             "EnergyDipoleRMSE",
+            "ALL_METRICS",
         ],
         default="PerAtomRMSE",
     )

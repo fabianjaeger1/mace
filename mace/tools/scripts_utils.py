@@ -277,7 +277,18 @@ def create_error_table(
             "RMSE MU / mDebye / atom",
             "rel MU RMSE %",
         ]
-    
+    elif table_type == "ALL_METRICS":
+        table.field_names = [
+                "config_type",
+                "MAE E / meV",
+                "MAE F / meV / A",
+                "MAE S / meV / A^2"
+                "relative F MAE %",
+                "RMSE E / meV / atom",
+                "RMSE F / meV / A",
+                "relative F RMSE %",
+                "RMSE Stress / meV / A",
+            ]
     for name in sorted(all_data_loaders, key=custom_key):
         data_loader = all_data_loaders[name]
         logging.info(f"Evaluating {name} ...")
@@ -387,5 +398,23 @@ def create_error_table(
                     f"{metrics['rmse_mu_per_atom'] * 1000:.1f}",
                     f"{metrics['rel_rmse_mu']:.1f}",
                 ]
+            )
+        # Add custom Metric    
+        elif (
+                table_type == "ALL_METRICS"
+                and metrics["rmse_stress"] is not None
+        ):
+            table.add_row(
+                [
+                    name,
+                    f"{metrics['mae_e'] * 1000:.1f}",
+                    f"{metrics['mae_f'] * 1000:.1f}",
+                    f"{metrics['mae_stress'] * 1000:.1f}",
+                    f"{metrics['rel_mae_f']:.2f}",
+                    f"{metrics['rmse_e_per_atom'] * 1000:.1f}",
+                    f"{metrics['rmse_f'] * 1000:.1f}",
+                    f"{metrics['rel_rmse_f']:.2f}",
+                    f"{metrics['rmse_stress'] * 1000:.1f}"
+                 ]
             )
     return table
