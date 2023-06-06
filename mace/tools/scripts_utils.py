@@ -281,6 +281,7 @@ def create_error_table(
         table.field_names = [
                 "config_type",
                 "MAE E / meV",
+                "MAE E / meV /atom",
                 "MAE F / meV / A",
                 "MAE S / meV / A^2"
                 "relative F MAE %",
@@ -407,7 +408,8 @@ def create_error_table(
             table.add_row(
                 [
                     name,
-                    f"{metrics['mae_e'] * 1000:.1f}",
+                    f"{metrics['mae_e'] * 1000:.1f}"
+                    f"{metrics['mae_e_per_atom'] * 1000:.1f}",
                     f"{metrics['mae_f'] * 1000:.1f}",
                     f"{metrics['mae_stress'] * 1000:.1f}",
                     f"{metrics['rel_mae_f']:.2f}",
