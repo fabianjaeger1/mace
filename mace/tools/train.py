@@ -335,15 +335,15 @@ def evaluate(
         
         # Custom IMplementation for 2d structures
         if output.get("stress") is not None and batch.stress is not None:
-            print("Batch stress: {}".format(batch.stress))
+            #print("Batch stress: {}".format(batch.stress))
             batch.stress[:,2,:] = 0
             batch.stress[:,:,2] = 0
-            print("Batch stress new: {}".format(batch.stress))
-            print("Output stress: {}".format(output['stress']))
+            #print("Batch stress new: {}".format(batch.stress))
+            #print("Output stress: {}".format(output['stress']))
             output['stress'][:,2,:] = 0
             output['stress'][:,:,2] = 0
             #output['stress'][2,:] = 0
-            print("Output stress new: {}".format(output['stress']))
+            #print("Output stress new: {}".format(output['stress']))
             
         loss = loss_fn(pred=output, ref=batch)
         total_loss += to_numpy(loss).item()
@@ -363,12 +363,12 @@ def evaluate(
             #print("Batch stress: {}".format(batch.stress))
             batch.stress[:,2,:] = 0
             batch.stress[:,:,2] = 0
-            print("Batch stress new: {}".format(batch.stress))
+            #print("Batch stress new: {}".format(batch.stress))
             #print("Output stress: {}".format(output['stress']))
             output['stress'][:,2,:] = 0
             output['stress'][:,:,2] = 0
             #output['stress'][2,:] = 0
-            print("Output stress new: {}".format(output['stress']))
+            #print("Output stress new: {}".format(output['stress']))
             delta_stress_list.append(batch.stress - output["stress"])
             delta_stress_per_atom_list.append(
                 (batch.stress - output["stress"])
