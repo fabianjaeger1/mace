@@ -158,6 +158,10 @@ def get_loss_fn(loss: str,
         loss_fn = modules.WeightedEnergyForcesLoss(
             energy_weight=energy_weight, forces_weight=forces_weight
         )
+    #================================
+    elif loss == "energy_only":
+        loss_fn = modules.WeightedEnergyLoss(energy_weight=energy_weight)
+    #===============================
     elif loss == "forces_only":
         loss_fn = modules.WeightedForcesLoss(forces_weight=forces_weight)
     elif loss == "virials":

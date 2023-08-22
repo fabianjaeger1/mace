@@ -89,6 +89,33 @@ class CheckpointIO:
         ]
         return [path for path in all_paths if os.path.isfile(path)]
 
+
+    # ===================================
+    def _parse_checkpoint_path_tr(self, path: str) -> Optional[CheckpointPathInfo]:
+        filename = os.path.basename(path)
+        regex = re.compile(
+            rf"^(?P<tag>.+){self._epochs_string}(?P<epochs>\d+)\.{self._filename_extension}$"
+        )
+        regex2 = re.compile(
+            rf"^(?P<tag>.+){self._epochs_string}(?P<epochs>\d+)_swa\.{self._filename_extension}$"
+        )
+        match = regex.match(filename)
+        match2 = regex2.match(filename)
+        swa = False
+        if not match:
+            if not match2:
+                return None
+            match = match2
+            swa = True
+
+        return CheckpointPathInfo(
+            path=path,
+            tag=match.group("tag"),
+            epochs=int(match.group("epochs")),
+            swa=swa,
+        )
+    # ==================================
+
     def _parse_checkpoint_path(self, path: str) -> Optional[CheckpointPathInfo]:
         filename = os.path.basename(path)
         regex = re.compile(
@@ -159,7 +186,21 @@ class CheckpointIO:
         os.makedirs(self.directory, exist_ok=True)
         torch.save(obj=checkpoint, f=path)
         self.old_path = path
+    
+    #====================================
+    # Custom Method
+    def load_transfer(
+        self,
+        path: str,
+        device: Optional[torch.device] = None,
+        ) -> Tuple[Checkpoint, int]:
+        
+        logging.info(f"Loading transfer model {path}")
 
+        return torch.load(path, map_location=device)
+    #====================================
+    
+    
     def load_latest(
         self, swa: Optional[bool] = False, device: Optional[torch.device] = None
     ) -> Optional[Tuple[Checkpoint, int]]:
@@ -194,6 +235,25 @@ class CheckpointHandler:
     ) -> None:
         checkpoint = self.builder.create_checkpoint(state)
         self.io.save(checkpoint, epochs, keep_last)
+   
+    #===============================
+    def load_transfer(
+            self,
+            state: CheckpointState,
+            path_transfer: str,
+            swa: Optional[bool] = False,
+            device: Optional[torch.device] = None,
+            strict=False,
+    ) -> Optional[int]:
+        result = self.io.load_transfer(path=path_transfer, device=device)
+        print("Result: {}".format(result))
+        if result is None:
+            print("None is loaded")
+        checkpoint = result
+        self.builder.load_checkpoint(state=state,checkpoint=checkpoint,strict=strict)
+
+    #==============================
+
 
     def load_latest(
         self,

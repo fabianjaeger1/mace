@@ -34,6 +34,24 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--downloads_dir", help="directory for downloads", type=str, default="downloads"
     )
+    
+    # Added from stock MACE, ability to load transfer model
+    #==============================================================
+    parser.add_argument(
+        "--mode",
+        help="select mode",
+        type=str,
+        choices=["transfer", "normal"],
+        default="normal",
+    )
+
+    parser.add_argument(
+        "--transfer_model_path",
+        type=str,
+        default="checkpoints",
+    )
+
+    #==============================================================
 
     # Device and logging
     parser.add_argument(
@@ -315,6 +333,7 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
         help="type of loss",
         default="weighted",
         choices=[
+            "energy_only",
             "ef",
             "weighted",
             "forces_only",
@@ -502,6 +521,13 @@ def build_default_arg_parser() -> argparse.ArgumentParser:
         type=str,
         default="",
     )
+    parser.add_argument(
+        "--wandb_group",
+        help="Weights and Biases group name",
+        type=str,
+        default="",
+    )
+
     parser.add_argument(
         "--wandb_log_hypers",
         help="The hyperparameters to log in Weights and Biases",
