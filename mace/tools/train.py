@@ -183,6 +183,11 @@ def train(
                 )
             ########################    
             # CUSTOM METHOD
+            elif log_errors == "EnergyMAE":
+                error_mae_e = eval_metrics["mae_e"] * 1e3
+                error_mae_e_per_atom = eval_metrics["mae_e_per_atom"] * 1e3
+                logging.info(f"Epoch {epoch}: loss={valid_loss:.4f}, MAE_E_per_atom={error_mae_e_per_atom:.1f} meV / A, MAE_E={error_mae_e:.1f} meV"
+                ) 
             elif (
                 log_errors == "ALL_METRICS"
                 and eval_metrics["rmse_stress"] is not None
@@ -199,26 +204,36 @@ def train(
                 )
             #####################
             if log_wandb:
-                wandb_log_dict = {
-                    "epoch": epoch,
-                    "valid_loss": valid_loss,
-                    "valid_rmse_e_per_atom": eval_metrics["rmse_e_per_atom"],
-                    "valid_rmse_f": eval_metrics["rmse_f"],
-                }
-                ##### ADD STRESS wandb metric logging
-                if eval_metrics["rmse_stress"] is not None:
-                    print("Eval with stress")
+
+                if log_errors == "ALL_METRICS":
                     wandb_log_dict = {
-                    "epoch": epoch,
-                    "valid_loss": valid_loss,
-                    "valid_mae_e": eval_metrics["mae_e"],
-                    "valid_mae_e_per_atom": eval_metrics["mae_e_per_atom"],
-                    "valid_mae_f": eval_metrics["mae_f"],
-                    "valid_mae_s": eval_metrics["mae_stress"],
-                    "valid_rmse_e_per_atom": eval_metrics["rmse_e_per_atom"],
-                    "valid_rmse_f": eval_metrics["rmse_f"],
-                    "valid_rmse_stress": eval_metrics["rmse_stress"],
-                }
+                        "epoch": epoch,
+                        "valid_loss": valid_loss,
+                        "valid_rmse_e_per_atom": eval_metrics["rmse_e_per_atom"],
+                        "valid_rmse_f": eval_metrics["rmse_f"],
+                    }
+                    ##### ADD STRESS wandb metric logging
+                    if eval_metrics["rmse_stress"] is not None:
+                        print("Eval with stress")
+                        wandb_log_dict = {
+                        "epoch": epoch,
+                        "valid_loss": valid_loss,
+                        "valid_mae_e": eval_metrics["mae_e"],
+                        "valid_mae_e_per_atom": eval_metrics["mae_e_per_atom"],
+                        "valid_mae_f": eval_metrics["mae_f"],
+                        "valid_mae_s": eval_metrics["mae_stress"],
+                        "valid_rmse_e_per_atom": eval_metrics["rmse_e_per_atom"],
+                        "valid_rmse_f": eval_metrics["rmse_f"],
+                        "valid_rmse_stress": eval_metrics["rmse_stress"],
+                        }
+                if log_errors == "EnergyMAE":
+                    print("Energy only logging")
+                    wandb_log_dict = {
+                            "epoch": epoch,
+                            "valid_loss": valid_loss,
+                            "valid_mae_e_per_atom": eval_metrics["mae_e_per_atom"],
+                            "valid_mae_e": eval_metrics["mae_e"],
+                    }
                 wandb.log(wandb_log_dict)
             if valid_loss >= lowest_loss:
                 patience_counter += 1

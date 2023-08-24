@@ -260,6 +260,12 @@ def create_error_table(
             "MAE F / meV / A",
             "relative F MAE %",
         ]
+    elif table_type == 'EnergyMAE':
+        table.field_names = [
+            "config_type",
+            "MAE E / meV / atom",
+            "MAe E / meV"
+        ] 
     elif table_type == "DipoleRMSE":
         table.field_names = [
             "config_type",
